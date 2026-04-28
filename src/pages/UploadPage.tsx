@@ -132,7 +132,7 @@ export default function UploadPage({ onBack }: UploadPageProps) {
 
   const handleVideoSelect = useCallback((file: File) => {
     if (!file.type.startsWith('video/')) { setError('Please select a video file'); return; }
-    if (file.size > 500 * 1024 * 1024) { setError(`Video "${file.name}" is ${(file.size / 1024 / 1024).toFixed(0)}MB. Maximum supported size is 500MB.`); return; }
+    if (file.size > 15 * 1024 * 1024 * 1024) { setError(`Video "${file.name}" is ${(file.size / 1024 / 1024 / 1024).toFixed(1)}GB. Maximum supported size is 15GB.`); return; }
     setVideoFile(file);
     setVideoPreview(URL.createObjectURL(file));
     setError('');
@@ -255,7 +255,7 @@ export default function UploadPage({ onBack }: UploadPageProps) {
 
   const handleEpisodeVideo = (seasonIdx: number, epIdx: number, file: File) => {
     if (!file.type.startsWith('video/')) { setError('Please select a video file'); return; }
-    if (file.size > 500 * 1024 * 1024) { setError(`Video "${file.name}" is ${(file.size / 1024 / 1024).toFixed(0)}MB. Maximum supported size is 500MB.`); return; }
+    if (file.size > 15 * 1024 * 1024 * 1024) { setError(`Video "${file.name}" is ${(file.size / 1024 / 1024 / 1024).toFixed(1)}GB. Maximum supported size is 15GB.`); return; }
     updateEpisode(seasonIdx, epIdx, 'videoFile', file);
     updateEpisode(seasonIdx, epIdx, 'videoPreview', URL.createObjectURL(file));
     setError('');
@@ -283,7 +283,7 @@ export default function UploadPage({ onBack }: UploadPageProps) {
 
   const handleExistingEpisodeVideo = (idx: number, file: File) => {
     if (!file.type.startsWith('video/')) { setError('Please select a video file'); return; }
-    if (file.size > 500 * 1024 * 1024) { setError(`Video "${file.name}" is ${(file.size / 1024 / 1024).toFixed(0)}MB. Maximum supported size is 500MB.`); return; }
+    if (file.size > 15 * 1024 * 1024 * 1024) { setError(`Video "${file.name}" is ${(file.size / 1024 / 1024 / 1024).toFixed(1)}GB. Maximum supported size is 15GB.`); return; }
     updateExistingEpisode(idx, 'videoFile', file);
     updateExistingEpisode(idx, 'videoPreview', URL.createObjectURL(file));
     setError('');
