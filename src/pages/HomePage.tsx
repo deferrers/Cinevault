@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
-import { Play, Clock, Tag, Search, Film, Upload, LogOut, User } from 'lucide-react';
+import { Play, Clock, Tag, Search, Film, Upload, LogOut, User, Trash2, X } from 'lucide-react';
 
 interface Show {
   id: string;
@@ -34,6 +34,8 @@ export default function HomePage({ onWatch, onUpload }: HomePageProps) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('All');
+  const [deleteTarget, setDeleteTarget] = useState<Show | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchShows();
@@ -60,6 +62,17 @@ export default function HomePage({ onWatch, onUpload }: HomePageProps) {
   const getPoster = (show: Show, index: number) => {
     if (show.poster_url) return show.poster_url;
     return PLACEHOLDER_POSTERS[index % PLACEHOLDER_POSTERS.length];
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const { error } = await supabase.from('shows').delete().eq('id', deleteTarget.id);
+    if (!error) {
+      setShows(prev => prev.filter(s => s.id !== deleteTarget.id));
+    }
+    setDeleting(false);
+    setDeleteTarget(null);
   };
 
   return (
@@ -171,9 +184,8 @@ export default function HomePage({ onWatch, onUpload }: HomePageProps) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filtered.map((show, index) => (
-              <button
+              <div
                 key={show.id}
-                onClick={() => onWatch(show)}
                 className="group text-left transition-transform hover:scale-[1.02] active:scale-[0.98]"
               >
                 <div className="relative aspect-[2/3] rounded-2xl overflow-hidden mb-3 bg-[#141414]">
@@ -184,9 +196,9 @@ export default function HomePage({ onWatch, onUpload }: HomePageProps) {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-14 h-14 bg-red-600/90 rounded-full flex items-center justify-center shadow-lg shadow-red-500/30 backdrop-blur-sm">
+                    <button onClick={() => onWatch(show)} className="w-14 h-14 bg-red-600/90 rounded-full flex items-center justify-center shadow-lg shadow-red-500/30 backdrop-blur-sm hover:bg-red-500 transition-colors">
                       <Play className="w-6 h-6 text-white ml-1" fill="white" />
-                    </div>
+                    </button>
                   </div>
                   {show.genre && (
                     <div className="absolute top-3 left-3">
@@ -195,6 +207,14 @@ export default function HomePage({ onWatch, onUpload }: HomePageProps) {
                         {show.genre}
                       </span>
                     </div>
+                  )}
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(show); }}
+                      className="absolute top-3 right-3 w-8 h-8 bg-black/60 backdrop-blur-sm rounded-lg flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-600/20 opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
                 <h3 className="text-white font-semibold text-sm mb-1 truncate">{show.title}</h3>
@@ -206,11 +226,45 @@ export default function HomePage({ onWatch, onUpload }: HomePageProps) {
                     </span>
                   )}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
+          <div className="relative bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <button onClick={() => setDeleteTarget(null)} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="w-12 h-12 bg-red-600/10 rounded-xl flex items-center justify-center mb-4">
+              <Trash2 className="w-6 h-6 text-red-400" />
+            </div>
+            <h3 className="text-white font-semibold text-lg mb-1">Delete Show</h3>
+            <p className="text-gray-400 text-sm mb-6">
+              Are you sure you want to delete <span className="text-white font-medium">{deleteTarget.title}</span>? This will also remove all its seasons and episodes. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 bg-[#0a0a0a] border border-white/10 text-gray-300 font-medium py-2.5 rounded-xl hover:bg-white/5 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 bg-red-600 hover:bg-red-500 text-white font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
