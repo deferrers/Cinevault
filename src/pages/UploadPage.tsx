@@ -161,13 +161,22 @@ export default function UploadPage({ onBack }: UploadPageProps) {
 
   const MAX_DIRECT_UPLOAD = 50 * 1024 * 1024;
 
+  const ensureUniquePath = (_bucket: string, path: string): string => {
+    const dotIdx = path.lastIndexOf('.');
+    const base = dotIdx > 0 ? path.slice(0, dotIdx) : path;
+    const ext = dotIdx > 0 ? path.slice(dotIdx) : '';
+    const rand = Math.random().toString(36).slice(2, 8);
+    return `${base}-${rand}${ext}`;
+  };
+
   const uploadFile = async (bucket: string, path: string, file: File) => {
+    const uniquePath = ensureUniquePath(bucket, path);
     if (file.size > MAX_DIRECT_UPLOAD) {
-      return uploadLargeFile(bucket, path, file);
+      return uploadLargeFile(bucket, uniquePath, file);
     }
-    const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
+    const { error } = await supabase.storage.from(bucket).upload(uniquePath, file, { upsert: false });
     if (error) throw new Error(`Upload failed for ${file.name}: ${error.message}`);
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    const { data } = supabase.storage.from(bucket).getPublicUrl(uniquePath);
     return data.publicUrl;
   };
 
